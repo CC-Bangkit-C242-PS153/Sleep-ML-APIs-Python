@@ -67,12 +67,12 @@ def home():
         print("Predicted Class:", predicted_class)
         result = classResult[predicted_class]
         data = {
-                "userId":"1",
+                "userId":pubsubMessage["userId"],
                 "inferenceId":str(newId),
                 "result":result,
                 "createdAt":createdAt,
             }
-        store_data("LDfwaiT0UFeko2T452BhI33nnn73",str(newId),data)
+        store_data(pubsubMessage["userId"],str(newId),data)
         return jsonify({
             "status":"Success",
             "statusCode":201,
