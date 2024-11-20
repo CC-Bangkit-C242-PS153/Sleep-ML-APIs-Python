@@ -41,7 +41,9 @@ def home():
         return jsonify({"error": "Model tidak tersedia"}), 500
     try:
         payload = request.get_json()
+        print(payload)
         pubsubMessage = decode_base64_json(payload['message']['data'])
+        print(pubsubMessage)
         new_data = np.array([
             [
             pubsubMessage['data']['gender'],
@@ -60,6 +62,7 @@ def home():
         classResult = ['Normal','Sleep Apnea','Insomnia']
         createdAt = datetime.now().isoformat()
         prediction = model.predict(new_data)
+        print(f"Data:")
         print("Predicted Probabilities:", prediction[0])  
         predicted_class = np.argmax(prediction)  
         print("Predicted Class:", predicted_class)
