@@ -42,20 +42,19 @@ def home():
     try:
         payload = request.get_json()
         pubsubMessage = decode_base64_json(payload['message']['data'])
-        newId = uuid.uuid4()
         new_data = np.array([
             [
-            pubsubMessage['gender'],
-            pubsubMessage['age'],
-            pubsubMessage['sleepDuration'], 
-            pubsubMessage['qualitySleep'], 
-            pubsubMessage['physicalActivity'], 
-            pubsubMessage['stressLevel'], 
-            pubsubMessage['BMI'], 
-            pubsubMessage['heartRate'], 
-            pubsubMessage['dailySteps'], 
-            pubsubMessage['systolic'], 
-            pubsubMessage['diastolic']
+            pubsubMessage['data']['gender'],
+            pubsubMessage['data']['age'],
+            pubsubMessage['data']['sleepDuration'], 
+            pubsubMessage['data']['qualitySleep'], 
+            pubsubMessage['data']['physicalActivity'], 
+            pubsubMessage['data']['stressLevel'], 
+            pubsubMessage['data']['BMI'], 
+            pubsubMessage['data']['heartRate'], 
+            pubsubMessage['data']['dailySteps'], 
+            pubsubMessage['data']['systolic'], 
+            pubsubMessage['data']['diastolic']
             ]
         ])
         classResult = ['Normal','Sleep Apnea','Insomnia']
@@ -68,11 +67,11 @@ def home():
         result = classResult[predicted_class]
         data = {
                 "userId":pubsubMessage["userId"],
-                "inferenceId":str(newId),
+                "inferenceId":pubsubMessage["inferenceId"],
                 "result":result,
                 "createdAt":createdAt,
             }
-        store_data(pubsubMessage["userId"],str(newId),data)
+        store_data(pubsubMessage["userId"],pubsubMessage["inferenceId"],data)
         return jsonify({
             "status":"Success",
             "statusCode":201,
