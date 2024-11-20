@@ -46,17 +46,17 @@ def home():
         print(pubsubMessage)
         new_data = np.array([
             [
-            pubsubMessage['data']['gender'],
-            pubsubMessage['data']['age'],
-            pubsubMessage['data']['sleepDuration'], 
-            pubsubMessage['data']['qualitySleep'], 
-            pubsubMessage['data']['physicalActivity'], 
-            pubsubMessage['data']['stressLevel'], 
-            pubsubMessage['data']['BMI'], 
-            pubsubMessage['data']['heartRate'], 
-            pubsubMessage['data']['dailySteps'], 
-            pubsubMessage['data']['systolic'], 
-            pubsubMessage['data']['diastolic']
+            int(pubsubMessage['data']['gender']),
+            int(pubsubMessage['data']['age']),
+            float(pubsubMessage['data']['sleepDuration']), 
+            int(pubsubMessage['data']['qualitySleep']), 
+            int(pubsubMessage['data']['physicalActivity']), 
+            int(pubsubMessage['data']['stressLevel']), 
+            int(pubsubMessage['data']['BMI']), 
+            int(pubsubMessage['data']['heartRate']), 
+            int(pubsubMessage['data']['dailySteps']), 
+            int(pubsubMessage['data']['systolic']), 
+            int(pubsubMessage['data']['diastolic'])
             ]
         ])
         classResult = ['Normal','Sleep Apnea','Insomnia']
