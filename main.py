@@ -104,8 +104,7 @@ async def home(request: Request):
     
     try:
         payload = await request.json()
-        # pubsubMessage = decode_base64_json(payload['message']['data'])
-        pubsubMessage = payload
+        pubsubMessage = decode_base64_json(payload['message']['data'])
 
         new_data = np.array([
             [
