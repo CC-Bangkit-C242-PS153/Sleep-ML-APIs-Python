@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, BackgroundTasks
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from firestoredb import store_data
@@ -8,9 +8,15 @@ import numpy as np
 import os
 import base64
 import json
+import threading
+import asyncio
 
 # Membuat aplikasi FastAPI
 app = FastAPI()
+LOCAL_MODEL_PATH = "model/model.h5"
+model = None
+model_loaded = False
+load_lock = threading.Lock()
 
 # Menambahkan middleware CORS
 app.add_middleware(
@@ -21,13 +27,6 @@ app.add_middleware(
     allow_headers=["*"],  # Izinkan semua header
 )
 
-# Fungsi callback untuk memverifikasi apakah model berhasil dimuat
-def model_loaded_callback(success, message):
-    if success:
-        print("Model berhasil dimuat!")
-    else:
-        print(f"Model gagal dimuat: {message}")
-
 def decode_base64_json(data):
     # Mendekode data Base64 menjadi bytes
     decoded_bytes = base64.b64decode(data)
@@ -36,24 +35,77 @@ def decode_base64_json(data):
     decoded_str = decoded_bytes.decode('utf-8')
     return json.loads(decoded_str)
 
-# Coba untuk memuat model dan beri callback
-try:
-    model = tf.keras.models.load_model('model/model.h5')
-    model_loaded_callback(True, "Model berhasil dimuat.")
-except Exception as e:
-    model_loaded_callback(False, str(e))
-    model = None
+# Fungsi untuk menunggu hingga model diload
+async def wait_for_model_to_load(timeout: int = 30):
+    global model_loaded
+    elapsed_time = 0
+    check_interval = 1  # Periksa setiap 1 detik
+    
+    while not model_loaded:
+        if elapsed_time >= timeout:
+            raise HTTPException(status_code=503, detail="Model not loaded within the expected time.")
+        await asyncio.sleep(check_interval)
+        elapsed_time += check_interval
+
+def load():
+            with load_lock:
+                global model, model_loaded
+                print("Loading model...")
+                model = tf.keras.models.load_model(LOCAL_MODEL_PATH)
+                model_loaded = True
+                print("Model loaded successfully.")
+
+# Endpoint untuk meload model
+@app.post("/load-model")
+async def load_model(background_tasks: BackgroundTasks):
+    global model, model_loaded
+
+    if model_loaded:
+        return JSONResponse(
+            status_code=200,
+            content={
+                 "status": "Success",
+                "statusCode": 200,
+                "message": "Model already loaded",
+            }
+        )
+
+    try:
+        load()
+        # Muat model di background untuk menghindari blocking
+        background_tasks.add_task(load)
+        return JSONResponse(
+            status_code=202,  # Accepted, karena proses dilakukan di background
+            content={
+                "status": "Success",
+                "statusCode": 200,
+                "message": "Successfully Load Model",
+            }
+        )
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,  # Internal server error
+            content={
+                 "status": "Failed",
+                 "statusCode": 500,
+                 "message": f"Failed to start loading model: {str(e)}"
+                 }
+        )
 
 @app.post("/")
 async def home(request: Request):
-    if model is None:
-        raise HTTPException(status_code=500, detail="Model tidak tersedia")
+    global model, model_loaded
+
+    while not model_loaded:
+        load()
+
+    # Tunggu hingga model diload
+    await wait_for_model_to_load()
     
     try:
         payload = await request.json()
-        print(payload)
-        pubsubMessage = decode_base64_json(payload['message']['data'])
-        print(pubsubMessage)
+        # pubsubMessage = decode_base64_json(payload['message']['data'])
+        pubsubMessage = payload
 
         new_data = np.array([
             [
