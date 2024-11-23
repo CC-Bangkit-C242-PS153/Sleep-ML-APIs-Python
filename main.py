@@ -126,10 +126,7 @@ async def home(request: Request):
         createdAt = datetime.now().isoformat()
 
         prediction = model.predict(new_data)
-        print(f"Data:")
-        print("Predicted Probabilities:", prediction[0])
         predicted_class = np.argmax(prediction)
-        print("Predicted Class:", predicted_class)
         
         result = classResult[predicted_class]
         data = {
